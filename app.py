@@ -6,13 +6,11 @@
 
 from typing import List, Dict
 import base64
-import io
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
 from transformers import pipeline
 
 # =========================
@@ -24,20 +22,25 @@ DEFAULT_ASPECTS = [
     "price", "quality", "delivery speed", "customer service", "packaging", "usability"
 ]
 
-# Simple built-in matplotlib styles (no extra deps)
+# Visual style options (Matplotlib-only)
 STYLE_MAP = {
+    "Sleek (custom)": "custom",
     "Streamlit default": None,
     "ggplot": "ggplot",
     "seaborn (builtin)": "seaborn-v0_8",
     "grayscale": "grayscale",
 }
+POS_COLOR = "#2CB67D"   # green
+NEG_COLOR = "#EF5B5B"   # red
+NEU_COLOR = "#A0AEC0"   # grey
+
 
 # =========================
 # MODEL LOADING
 # =========================
 @st.cache_resource(show_spinner=False)
 def load_pipelines():
-    """Load and cache HF pipelines once per session."""
+    """Load and cache Hugging Face pipelines once per session."""
     sentiment = pipeline(
         "sentiment-analysis",
         model="cardiffnlp/twitter-roberta-base-sentiment-latest"
@@ -48,8 +51,9 @@ def load_pipelines():
     )
     return sentiment, zero_shot
 
+
 # =========================
-# HELPERS
+# HELPERS (logic)
 # =========================
 def percent(x: float) -> float:
     return float(np.round(100.0 * float(x), 2))
@@ -66,7 +70,7 @@ def analyze_single_review(
     sentiment_pipeline,
     zeroshot_pipeline
 ) -> Dict:
-    """Return overall sentiment + aspect positive/negative %."""
+    """Return overall sentiment + aspect positive/negative % for one review."""
     # Overall
     o = sentiment_pipeline(text)[0]
     overall_label = tidy_overall_label(o["label"])
@@ -103,40 +107,50 @@ def analyze_single_review(
         "aspects": pd.DataFrame(rows)
     }
 
+
+# =========================
+# HELPERS (plotting)
+# =========================
 def _apply_style(style_key: str):
-    """Apply a global matplotlib style."""
+    """Apply a clean, presentation-ready look (Matplotlib-only)."""
+    import matplotlib as mpl
     plt.rcParams.update(plt.rcParamsDefault)  # reset
+
     style = STYLE_MAP.get(style_key)
-    if style:
+    if style and style != "custom":
         plt.style.use(style)
-    plt.rcParams.update({
-        "axes.grid": True,
-        "grid.alpha": 0.22,
+
+    # Minimal, modern dashboard rcParams
+    mpl.rcParams.update({
+        # Font & text
+        "font.size": 11,
         "axes.titlesize": 13,
         "axes.labelsize": 11,
+        "legend.fontsize": 10,
+
+        # Grid
+        "axes.grid": True,
+        "grid.color": "#8b8b8b",
+        "grid.alpha": 0.18,
+        "grid.linestyle": "-",
+        "grid.linewidth": 0.8,
+
+        # Axes
+        "axes.edgecolor": "#DDDDDD",
+        "axes.linewidth": 0.8,
+
+        # Figure
         "figure.autolayout": True,
+        "figure.facecolor": "white",
+
+        # Ticks
+        "xtick.color": "#333333",
+        "ytick.color": "#333333",
     })
 
-def _annotate_bars(ax):
-    for p in ax.patches:
-        h = p.get_height() if p.get_height() != 0 else p.get_width()
-        # Handle horizontal bars too
-        if isinstance(p, plt.Rectangle):
-            if ax.yaxis.get_label_position() in ("left", "right") and p.get_width() != 0:
-                # Horizontal bars
-                ax.annotate(f"{p.get_width():.0f}%",
-                            (p.get_x()+p.get_width(), p.get_y()+p.get_height()/2),
-                            ha="left", va="center", fontsize=9, xytext=(3,0),
-                            textcoords="offset points")
-            else:
-                # Vertical bars
-                ax.annotate(f"{p.get_height():.0f}%",
-                            (p.get_x()+p.get_width()/2, p.get_height()),
-                            ha="center", va="bottom", fontsize=9, xytext=(0,3),
-                            textcoords="offset points")
-
-def plot_sentiment_pie(overall_label: str, overall_conf: float, style_key: str):
+def plot_sentiment_donut(overall_label: str, overall_conf: float, style_key: str):
     _apply_style(style_key)
+
     labels = ["Positive", "Neutral", "Negative"]
     vals = [0, 0, 0]
     if overall_label == "POSITIVE":
@@ -146,14 +160,35 @@ def plot_sentiment_pie(overall_label: str, overall_conf: float, style_key: str):
     else:
         vals = [0, overall_conf, 100 - overall_conf]
 
+    colors = [POS_COLOR, NEU_COLOR, NEG_COLOR]
+
     fig, ax = plt.subplots()
-    wedges, texts, autopcts = ax.pie(
-        vals, labels=labels, autopct="%1.0f%%", startangle=90, pctdistance=0.75
+    wedges, _, _ = ax.pie(
+        vals,
+        labels=None,            # labels in legend only
+        autopct="%1.0f%%",
+        startangle=90,
+        pctdistance=0.78,
+        colors=colors
     )
-    # Donut center
-    centre_circle = plt.Circle((0, 0), 0.55, fc="white")
-    fig.gca().add_artist(centre_circle)
-    ax.set_title("Overall sentiment")
+    # Donut hole
+    centre = plt.Circle((0, 0), 0.58, fc="white")
+    ax.add_artist(centre)
+
+    # Center labels
+    ax.text(0, 0.05, overall_label.title(), ha="center", va="center",
+            fontsize=12, weight="bold")
+    ax.text(0, -0.12, f"{overall_conf:.0f}%", ha="center", va="center",
+            fontsize=11, color="#555")
+
+    # Legend
+    ax.legend(
+        [wedges[0], wedges[1], wedges[2]],
+        labels,
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        frameon=False,
+    )
     ax.axis("equal")
     st.pyplot(fig, use_container_width=True)
 
@@ -170,49 +205,91 @@ def plot_aspect_bars(
 
     if orientation == "horizontal":
         y = np.arange(len(df_aspects))
-        height = 0.4
+        h = 0.38
         fig, ax = plt.subplots()
-        ax.barh(y - height/2, df_aspects["positive_%"], height, label="Positive")
-        ax.barh(y + height/2, df_aspects["negative_%"], height, label="Negative")
+        ax.barh(y - h/2, df_aspects["positive_%"], h, label="Positive",
+                color=POS_COLOR, alpha=0.9)
+        ax.barh(y + h/2, df_aspects["negative_%"], h, label="Negative",
+                color=NEG_COLOR, alpha=0.9)
+
+        for spine in ["top", "right"]:
+            ax.spines[spine].set_visible(False)
+
         ax.set_yticks(y)
         ax.set_yticklabels(df_aspects["aspect"])
         ax.set_xlabel("%")
         ax.set_title("Aspect-level sentiment")
-        ax.legend(loc="lower right")
+        ax.legend(loc="lower right", frameon=False)
+
         if show_values:
-            _annotate_bars(ax)
+            for i, v in enumerate(df_aspects["positive_%"]):
+                ax.text(v + 1, i - h/2, f"{v:.0f}%", va="center", fontsize=9, color="#333")
+            for i, v in enumerate(df_aspects["negative_%"]):
+                ax.text(v + 1, i + h/2, f"{v:.0f}%", va="center", fontsize=9, color="#333")
+
         st.pyplot(fig, use_container_width=True)
+
     else:
         x = np.arange(len(df_aspects))
-        width = 0.40
+        w = 0.40
         fig, ax = plt.subplots()
-        ax.bar(x - width/2, df_aspects["positive_%"], width, label="Positive")
-        ax.bar(x + width/2, df_aspects["negative_%"], width, label="Negative")
+        p1 = ax.bar(x - w/2, df_aspects["positive_%"], w, label="Positive",
+                    color=POS_COLOR, alpha=0.9)
+        p2 = ax.bar(x + w/2, df_aspects["negative_%"], w, label="Negative",
+                    color=NEG_COLOR, alpha=0.9)
+
+        for spine in ["top", "right"]:
+            ax.spines[spine].set_visible(False)
+
         ax.set_xticks(x)
-        ax.set_xticklabels(df_aspects["aspect"], rotation=15, ha="right")
+        ax.set_xticklabels(df_aspects["aspect"], rotation=12, ha="right")
         ax.set_ylabel("%")
         ax.set_title("Aspect-level sentiment")
-        ax.legend()
+        ax.legend(frameon=False)
+
         if show_values:
-            _annotate_bars(ax)
+            for rects in (p1, p2):
+                for r in rects:
+                    ax.text(r.get_x() + r.get_width()/2, r.get_height() + 1,
+                            f"{r.get_height():.0f}%", ha="center", va="bottom",
+                            fontsize=9, color="#333")
+
         st.pyplot(fig, use_container_width=True)
 
 def plot_aspect_radar(df_aspects: pd.DataFrame, style_key: str):
     _apply_style(style_key)
     if df_aspects.empty:
         return
+
     labels = df_aspects["aspect"].tolist()
     pos = df_aspects["positive_%"].to_numpy()
+    neg = df_aspects["negative_%"].to_numpy()
+
+    # Close the loop
     angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False)
     pos = np.concatenate((pos, [pos[0]]))
+    neg = np.concatenate((neg, [neg[0]]))
     angles = np.concatenate((angles, [angles[0]]))
+
     fig, ax = plt.subplots(subplot_kw=dict(polar=True))
-    ax.plot(angles, pos, linewidth=2)
-    ax.fill(angles, pos, alpha=0.25)
+
+    # Light spider grid
+    ax.set_facecolor("white")
+    ax.grid(True, alpha=0.2)
+    ax.set_yticks([20, 40, 60, 80, 100])
+    ax.set_yticklabels(["20", "40", "60", "80", "100"], color="#777", fontsize=9)
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
-    ax.set_yticklabels([])
-    ax.set_title("Aspect radar (Positive %)")
+
+    # Polygons (Positive vs Negative)
+    ax.plot(angles, pos, color=POS_COLOR, linewidth=2, label="Positive")
+    ax.fill(angles, pos, color=POS_COLOR, alpha=0.15)
+
+    ax.plot(angles, neg, color=NEG_COLOR, linewidth=2, label="Negative")
+    ax.fill(angles, neg, color=NEG_COLOR, alpha=0.10)
+
+    ax.set_title("Aspect radar (Positive vs Negative)", pad=12)
+    ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.05), frameon=False)
     st.pyplot(fig, use_container_width=True)
 
 def make_download_link(df: pd.DataFrame, filename: str) -> str:
@@ -221,8 +298,9 @@ def make_download_link(df: pd.DataFrame, filename: str) -> str:
     b64 = base64.b64encode(csv).decode()
     return f'<a href="data:file/csv;base64,{b64}" download="{filename}">Download CSV</a>'
 
+
 # =========================
-# SIDEBAR
+# SIDEBAR (controls)
 # =========================
 st.sidebar.title("⚙️ Settings")
 
@@ -236,10 +314,10 @@ except Exception as e:
 
 # Graph options
 st.sidebar.markdown("### 🎨 Graph style")
-style_key = st.sidebar.selectbox("Matplotlib style", list(STYLE_MAP.keys()), index=1)
+style_key = st.sidebar.selectbox("Matplotlib style", list(STYLE_MAP.keys()), index=0)
 bar_orientation = st.sidebar.radio("Bar orientation", ["vertical", "horizontal"], index=1)
 show_values = st.sidebar.checkbox("Show % labels on bars", value=True)
-show_radar = st.sidebar.checkbox("Show radar (Positive %)", value=True)
+show_radar = st.sidebar.checkbox("Show radar (Positive vs Negative)", value=True)
 
 # Aspects
 st.sidebar.markdown("### 🏷️ Aspects to score")
@@ -257,6 +335,7 @@ upload_file = st.sidebar.file_uploader("Or upload CSV with a 'review' column", t
 # Extras
 st.sidebar.markdown("---")
 extra_opts = st.sidebar.checkbox("Show extras (keywords, length)", value=True)
+
 
 # =========================
 # MAIN — Single review
@@ -283,14 +362,14 @@ if analyze_btn and review_text.strip():
     with st.spinner("Analyzing review..."):
         out = analyze_single_review(review_text, ASPECTS, sentiment_pipe, zeroshot_pipe)
 
-    # KPIs + Pie
+    # KPIs + Donut
     k1, k2 = st.columns([1, 1])
     with k1:
         st.subheader("🧭 Overall sentiment")
         st.metric("Prediction", out["overall_label"])
         st.metric("Confidence", f"{out['overall_confidence_%']:.0f}%")
     with k2:
-        plot_sentiment_pie(out["overall_label"], out["overall_confidence_%"], style_key)
+        plot_sentiment_donut(out["overall_label"], out["overall_confidence_%"], style_key)
 
     # Table + Bars (+ Radar)
     st.subheader("🧩 Aspect-level signals")
@@ -318,6 +397,7 @@ if analyze_btn and review_text.strip():
         if top_kw:
             st.write("Top keywords:")
             st.write(", ".join([k for k, _ in top_kw]))
+
 
 # =========================
 # BATCH MODE
@@ -381,6 +461,7 @@ if "batch_df" in st.session_state:
         res = pd.DataFrame(rows)
         st.dataframe(res, use_container_width=True)
         st.markdown(make_download_link(res, "review_insights_results.csv"), unsafe_allow_html=True)
+
 
 # =========================
 # FOOTER
