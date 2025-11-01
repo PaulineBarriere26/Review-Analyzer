@@ -1,6 +1,6 @@
 # app.py
 # ---------------------------------------------
-# 🔎 Review Insights — Customer Feedback Analyzer
+# 🔎 Insightlytics — Customer Feedback Analyzer
 # A Streamlit app to classify review sentiment and score aspect-level signals
 # ---------------------------------------------
 
