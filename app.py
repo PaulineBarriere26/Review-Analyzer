@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 from transformers import pipeline
 
-",") if a.strip()]
+ASPECTS = [a.strip() for a in custom_aspects.split(",") if a.strip()]
 
 st.title("🔎 Review Insights — Customer Feedback Analyzer")
 st.caption("Paste reviews to get overall sentiment and aspect-level scores.")
