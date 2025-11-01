@@ -20,7 +20,7 @@ from transformers import pipeline
 # ---------------------------------------------
 # CONFIG
 # ---------------------------------------------
-st.set_page_config(page_title="🔎 Review Insights", page_icon="🔎", layout="wide")
+st.set_page_config(page_title="🔎 Insightlytics", page_icon="🔎", layout="wide")
 
 DEFAULT_ASPECTS = [
     "price", "quality", "delivery speed", "customer service", "packaging", "usability"
