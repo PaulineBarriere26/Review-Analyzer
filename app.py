@@ -176,7 +176,7 @@ extra_opts = st.sidebar.checkbox("Show extras (top keywords, length, etc.)", val
 # ---------------------------------------------
 # UI — Main
 # ---------------------------------------------
-st.title("🔎 Review Insights — Customer Feedback Analyzer")
+st.title("🔎 Insightlytics — Customer Feedback Analyzer")
 st.caption("Paste reviews to get overall sentiment and aspect-level scores (positive vs negative).")
 
 col1, col2 = st.columns([2,1], gap="large")
