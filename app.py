@@ -1,6 +1,6 @@
 # app.py
 # ---------------------------------------------------------
-# 🔎 Review Insights — Customer Feedback Analyzer
+# 🔎 Insightlytics - Customer Feedback Analyzer
 # Classify overall sentiment and score aspects (positive/negative %)
 # ---------------------------------------------------------
 
@@ -24,7 +24,7 @@ NEU_DARK  = "#C3CAD9"
 # =========================
 # CONFIG
 # =========================
-st.set_page_config(page_title="🔎 Review Insights", page_icon="🔎", layout="wide")
+st.set_page_config(page_title="🔎 Insightlytics", page_icon="🔎", layout="wide")
 # --- Dashboard Header ---
 
 DEFAULT_ASPECTS = [
@@ -313,7 +313,7 @@ def render_header(dark: bool):
         </style>
         <div class="header">
             <h1>Welcome to Insightlytics !</h1>
-            <div class="tagline">AI dashboard for understanding customer feedback</div>
+            <div class="tagline">Your AI dashboard for understanding customer feedback</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -363,7 +363,7 @@ extra_opts = st.sidebar.checkbox("Show extras (keywords, length)", value=True)
 # =========================
 # MAIN — Single review
 # =========================
-st.title("🔎 Review Insights — Customer Feedback Analyzer")
+st.title("🔎 Insightlytics - Customer Feedback Analyzer")
 st.caption("Paste a review to get overall sentiment and aspect-level scores (positive vs negative).")
 
 col1, col2 = st.columns([2, 1], gap="large")
