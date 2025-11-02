@@ -409,30 +409,30 @@ if analyze_btn and review_text.strip():
         out = analyze_single_review(review_text, ASPECTS, sentiment_pipe, zeroshot_pipe)
     k1, k2 = st.columns([1, 1])
     with k1:
-    st.subheader("🧭 Overall sentiment")
+        st.subheader("🧭 Overall sentiment")
 
-    # pick colors
-    POS = POS_DARK if dark_mode else POS_LIGHT
-    NEG = NEG_DARK if dark_mode else NEG_LIGHT
-    NEU = NEU_DARK if dark_mode else NEU_LIGHT
-    label_color = POS if out["overall_label"] == "POSITIVE" else (NEG if out["overall_label"] == "NEGATIVE" else NEU)
-    sub_color   = "#A9B2C3" if dark_mode else "#666666"   # caption color
+        # pick colors
+        POS = POS_DARK if dark_mode else POS_LIGHT
+        NEG = NEG_DARK if dark_mode else NEG_LIGHT
+        NEU = NEU_DARK if dark_mode else NEU_LIGHT
+        label_color = POS if out["overall_label"] == "POSITIVE" else (NEG if out["overall_label"] == "NEGATIVE" else NEU)
+        sub_color   = "#A9B2C3" if dark_mode else "#666666"   # caption color
 
-    # render colored KPIs
-    st.markdown(f"""
-        <div style="margin-top:.25rem">
-            <div style="color:{sub_color}; font-size:0.95rem; margin-bottom:.15rem;">Prediction</div>
-            <div style="color:{label_color}; font-size:3rem; font-weight:800; letter-spacing:.02em;">
-                {out["overall_label"]}
+        # render colored KPIs
+        st.markdown(f"""
+            <div style="margin-top:.25rem">
+                <div style="color:{sub_color}; font-size:0.95rem; margin-bottom:.15rem;">Prediction</div>
+                <div style="color:{label_color}; font-size:3rem; font-weight:800; letter-spacing:.02em;">
+                    {out["overall_label"]}
+                </div>
             </div>
-        </div>
-        <div style="margin-top:1rem">
-            <div style="color:{sub_color}; font-size:0.95rem; margin-bottom:.15rem;">Confidence</div>
-            <div style="color:{label_color}; font-size:2.6rem; font-weight:700;">
-                {out["overall_confidence_%"]:.0f}%
+            <div style="margin-top:1rem">
+                <div style="color:{sub_color}; font-size:0.95rem; margin-bottom:.15rem;">Confidence</div>
+                <div style="color:{label_color}; font-size:2.6rem; font-weight:700;">
+                    {out["overall_confidence_%"]:.0f}%
+                </div>
             </div>
-        </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     with k2:
         plot_sentiment_donut(out["overall_label"], out["overall_confidence_%"])
