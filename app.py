@@ -177,10 +177,24 @@ def plot_sentiment_donut(overall_label: str, overall_conf: float, dark_mode: boo
     centre = plt.Circle((0, 0), 0.58, fc="white")
     ax.add_artist(centre)
 
-    ax.text(0, 0.05, overall_label.title(), ha="center", va="center",
-            fontsize=12, weight="bold")
-    ax.text(0, -0.12, f"{overall_conf:.0f}%", ha="center", va="center",
-            fontsize=11, color="#555")
+# Choose label color based on sentiment
+if overall_label == "POSITIVE":
+    label_color = POS_DARK if dark_mode else POS_LIGHT
+elif overall_label == "NEGATIVE":
+    label_color = NEG_DARK if dark_mode else NEG_LIGHT
+else:
+    label_color = NEU_DARK if dark_mode else NEU_LIGHT
+
+# Text in center of donut
+ax.text(0, 0.05, overall_label.title(),
+        ha="center", va="center",
+        fontsize=13, weight="bold",
+        color=label_color)
+
+ax.text(0, -0.12, f"{overall_conf:.0f}%",
+        ha="center", va="center",
+        fontsize=12, weight="medium",
+        color=label_color)
 
     ax.legend(
         [wedges[0], wedges[1], wedges[2]],
