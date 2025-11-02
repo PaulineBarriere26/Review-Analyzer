@@ -26,35 +26,6 @@ NEU_DARK  = "#C3CAD9"
 # =========================
 st.set_page_config(page_title="🔎 Review Insights", page_icon="🔎", layout="wide")
 # --- Dashboard Header ---
-st.markdown("""
-    <style>
-        .header {
-            background-color: #F5F7FA;
-            padding: 0.9rem 1.5rem;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .header h1 {
-            font-size: 1.6rem;
-            color: #222;
-            margin: 0;
-        }
-        .tagline {
-            color: #666;
-            font-size: 0.95rem;
-            font-weight: 400;
-        }
-    </style>
-
-    <div class="header">
-        <h1>Welcome to Insightlytics</h1>
-        <div class="tagline">Your AI dashboard for understanding customer feedback</div>
-    </div>
-""", unsafe_allow_html=True)
 
 DEFAULT_ASPECTS = [
     "price", "quality", "delivery speed", "customer service", "packaging", "usability"
@@ -307,6 +278,47 @@ def make_download_link(df: pd.DataFrame, filename: str) -> str:
 # =========================
 st.sidebar.title("⚙️ Settings")
 dark_mode = st.sidebar.checkbox("🌙 Dark mode", value=False)
+# --- Responsive Header Banner ---
+def render_header(dark: bool):
+    bg   = "#0E1117" if dark else "#F5F7FA"   # background color
+    fg   = "#E6E6E6" if dark else "#222222"   # title text color
+    sub  = "#A9B2C3" if dark else "#666666"   # subtitle color
+    edge = "#2A2F3A" if dark else "#DDDDDD"   # subtle border
+    shadow = "none" if dark else "0 2px 8px rgba(0,0,0,0.05)"
+
+    st.markdown(f"""
+        <style>
+            .header {{
+                background-color: {bg};
+                color: {fg};
+                padding: 0.9rem 1.5rem;
+                border-radius: 12px;
+                border: 1px solid {edge};
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1.2rem;
+                box-shadow: {shadow};
+            }}
+            .header h1 {{
+                font-size: 1.6rem;
+                margin: 0;
+                color: {fg};
+            }}
+            .header .tagline {{
+                color: {sub};
+                font-size: 0.95rem;
+                font-weight: 400;
+            }}
+        </style>
+        <div class="header">
+            <h1>🔎 Welcome to Insightlytics</h1>
+            <div class="tagline">AI dashboard for understanding customer feedback</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+# Call it so it renders
+render_header(dark_mode)
 def _apply_page_css(dark: bool):
     if dark:
         st.markdown("""
