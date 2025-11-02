@@ -12,6 +12,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from transformers import pipeline
 
+# --- Dark/Light Mode Color Palettes ---
+POS_LIGHT = "#2CB67D"   # green
+NEG_LIGHT = "#EF5B5B"   # red
+NEU_LIGHT = "#A0AEC0"   # grey
+
+POS_DARK  = "#38E2A0"
+NEG_DARK  = "#FF7B7B"
+NEU_DARK  = "#C3CAD9"
+
 # =========================
 # CONFIG
 # =========================
