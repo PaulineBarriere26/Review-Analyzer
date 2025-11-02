@@ -156,54 +156,63 @@ def _apply_sleek_style(dark_mode: bool = False):
             "ytick.color": "#333333",
         })
 
-
 def plot_sentiment_donut(overall_label: str, overall_conf: float, dark_mode: bool = False):
-    _apply_sleek_style()
+    # --- colors (fallbacks in case globals aren't defined) ---
+    try:
+        POS = POS_DARK if dark_mode else POS_LIGHT
+        NEG = NEG_DARK if dark_mode else NEG_LIGHT
+        NEU = NEU_DARK if dark_mode else NEU_LIGHT
+    except NameError:
+        POS_LIGHT = "#2CB67D"; NEG_LIGHT = "#EF5B5B"; NEU_LIGHT = "#A0AEC0"
+        POS_DARK  = "#38E2A0"; NEG_DARK  = "#FF7B7B"; NEU_DARK  = "#C3CAD9"
+        POS = POS_DARK if dark_mode else POS_LIGHT
+        NEG = NEG_DARK if dark_mode else NEG_LIGHT
+        NEU = NEU_DARK if dark_mode else NEU_LIGHT
+
+    _apply_sleek_style(dark_mode)
+
+    # values
     labels = ["Positive", "Neutral", "Negative"]
-    vals = [0, 0, 0]
     if overall_label == "POSITIVE":
         vals = [overall_conf, 100 - overall_conf, 0]
     elif overall_label == "NEGATIVE":
         vals = [0, 100 - overall_conf, overall_conf]
     else:
         vals = [0, overall_conf, 100 - overall_conf]
-    colors = [POS_COLOR, NEU_COLOR, NEG_COLOR]
 
+    # donut
     fig, ax = plt.subplots()
     wedges, _, _ = ax.pie(
-        vals, labels=None, autopct="%1.0f%%",
-        startangle=90, pctdistance=0.78, colors=colors
+        vals,
+        labels=None,
+        autopct="%1.0f%%",
+        startangle=90,
+        pctdistance=0.78,
+        colors=[POS, NEU, NEG],
     )
-    centre = plt.Circle((0, 0), 0.58, fc="white")
+    centre = plt.Circle((0, 0), 0.58, fc="white" if not dark_mode else "#0E1117")
     ax.add_artist(centre)
 
-# Choose label color based on sentiment
-if overall_label == "POSITIVE":
-    label_color = POS_DARK if dark_mode else POS_LIGHT
-elif overall_label == "NEGATIVE":
-    label_color = NEG_DARK if dark_mode else NEG_LIGHT
-else:
-    label_color = NEU_DARK if dark_mode else NEU_LIGHT
+    # center text color = sentiment color
+    if overall_label == "POSITIVE":
+        label_color = POS
+    elif overall_label == "NEGATIVE":
+        label_color = NEG
+    else:
+        label_color = NEU
 
-# Text in center of donut
-ax.text(0, 0.05, overall_label.title(),
-        ha="center", va="center",
-        fontsize=13, weight="bold",
-        color=label_color)
+    ax.text(0, 0.05, overall_label.title(),
+            ha="center", va="center", fontsize=13, weight="bold",
+            color=label_color)
+    ax.text(0, -0.12, f"{overall_conf:.0f}%",
+            ha="center", va="center", fontsize=12, weight="medium",
+            color=label_color)
 
-ax.text(0, -0.12, f"{overall_conf:.0f}%",
-        ha="center", va="center",
-        fontsize=12, weight="medium",
-        color=label_color)
-
-    ax.legend(
-        [wedges[0], wedges[1], wedges[2]],
-        labels, loc="center left", bbox_to_anchor=(1.02, 0.5),
-        frameon=False
-    )
+    # legend
+    ax.legend([wedges[0], wedges[1], wedges[2]], labels,
+              loc="center left", bbox_to_anchor=(1.02, 0.5), frameon=False)
     ax.axis("equal")
     st.pyplot(fig, use_container_width=True)
-
 
 def plot_aspect_bars(df_aspects: pd.DataFrame, orientation: str, show_values: bool, dark_mode: bool = False):
     _apply_sleek_style()
