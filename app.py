@@ -307,6 +307,23 @@ def make_download_link(df: pd.DataFrame, filename: str) -> str:
 # =========================
 st.sidebar.title("⚙️ Settings")
 dark_mode = st.sidebar.checkbox("🌙 Dark mode", value=False)
+def _apply_page_css(dark: bool):
+    if dark:
+        st.markdown("""
+        <style>
+            .stApp { background-color: #0E1117; color: #E6E6E6; }
+            div[data-testid="stSidebar"] { background-color: #111418; }
+        </style>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <style>
+            .stApp { background-color: #FFFFFF; color: #111111; }
+            div[data-testid="stSidebar"] { background-color: #F7F9FB; }
+        </style>
+        """, unsafe_allow_html=True)
+
+_apply_page_css(dark_mode)
 try:
     sentiment_pipe, zeroshot_pipe = load_pipelines()
     st.sidebar.success("Models loaded.")
