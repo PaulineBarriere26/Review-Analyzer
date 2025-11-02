@@ -1,6 +1,6 @@
 # app.py
 # ---------------------------------------------------------
-# 🔎 Review Insights — Customer Feedback Analyzer
+# 🔎 Insightlytics — Customer Feedback Analyzer
 # Classify overall sentiment and score aspects (positive/negative %)
 # ---------------------------------------------------------
 
@@ -16,7 +16,7 @@ from transformers import pipeline
 # =========================
 # CONFIG
 # =========================
-st.set_page_config(page_title="🔎 Review Insights", page_icon="🔎", layout="wide")
+st.set_page_config(page_title="🔎 Insightlytics", page_icon="🔎", layout="wide")
 
 DEFAULT_ASPECTS = [
     "price", "quality", "delivery speed", "customer service", "packaging", "usability"
@@ -340,7 +340,7 @@ extra_opts = st.sidebar.checkbox("Show extras (keywords, length)", value=True)
 # =========================
 # MAIN — Single review
 # =========================
-st.title("🔎 Review Insights — Customer Feedback Analyzer")
+st.title("🔎 Insightlytics — Customer Feedback Analyzer")
 st.caption("Paste a review to get overall sentiment and aspect-level scores (positive vs negative).")
 
 col1, col2 = st.columns([2, 1], gap="large")
