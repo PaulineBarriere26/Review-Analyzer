@@ -306,7 +306,7 @@ def make_download_link(df: pd.DataFrame, filename: str) -> str:
 # SIDEBAR
 # =========================
 st.sidebar.title("⚙️ Settings")
-
+dark_mode = st.sidebar.checkbox("🌙 Dark mode", value=False)
 try:
     sentiment_pipe, zeroshot_pipe = load_pipelines()
     st.sidebar.success("Models loaded.")
