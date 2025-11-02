@@ -1,12 +1,11 @@
 # app.py
 # ---------------------------------------------------------
-# 🔎 Insightlytics — Customer Feedback Analyzer
+# 🔎 Review Insights — Customer Feedback Analyzer
 # Classify overall sentiment and score aspects (positive/negative %)
 # ---------------------------------------------------------
 
 from typing import List, Dict
 import base64
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -16,20 +15,14 @@ from transformers import pipeline
 # =========================
 # CONFIG
 # =========================
-st.set_page_config(page_title="🔎 Insightlytics", page_icon="🔎", layout="wide")
+st.set_page_config(page_title="🔎 Review Insights", page_icon="🔎", layout="wide")
 
 DEFAULT_ASPECTS = [
     "price", "quality", "delivery speed", "customer service", "packaging", "usability"
 ]
 
-# Visual style options (Matplotlib-only)
-STYLE_MAP = {
-    "Sleek (custom)": "custom",
-    "Streamlit default": None,
-    "ggplot": "ggplot",
-    "seaborn (builtin)": "seaborn-v0_8",
-    "grayscale": "grayscale",
-}
+# Only one sleek custom style
+STYLE_KEY = "Sleek (custom)"
 POS_COLOR = "#2CB67D"   # green
 NEG_COLOR = "#EF5B5B"   # red
 NEU_COLOR = "#A0AEC0"   # grey
@@ -53,7 +46,7 @@ def load_pipelines():
 
 
 # =========================
-# HELPERS (logic)
+# HELPER FUNCTIONS
 # =========================
 def percent(x: float) -> float:
     return float(np.round(100.0 * float(x), 2))
@@ -109,48 +102,32 @@ def analyze_single_review(
 
 
 # =========================
-# HELPERS (plotting)
+# VISUAL STYLE + PLOTS
 # =========================
-def _apply_style(style_key: str):
-    """Apply a clean, presentation-ready look (Matplotlib-only)."""
+def _apply_sleek_style():
+    """Apply the sleek modern dashboard look."""
     import matplotlib as mpl
     plt.rcParams.update(plt.rcParamsDefault)  # reset
 
-    style = STYLE_MAP.get(style_key)
-    if style and style != "custom":
-        plt.style.use(style)
-
-    # Minimal, modern dashboard rcParams
     mpl.rcParams.update({
-        # Font & text
         "font.size": 11,
         "axes.titlesize": 13,
         "axes.labelsize": 11,
         "legend.fontsize": 10,
-
-        # Grid
         "axes.grid": True,
         "grid.color": "#8b8b8b",
         "grid.alpha": 0.18,
-        "grid.linestyle": "-",
-        "grid.linewidth": 0.8,
-
-        # Axes
         "axes.edgecolor": "#DDDDDD",
         "axes.linewidth": 0.8,
-
-        # Figure
         "figure.autolayout": True,
         "figure.facecolor": "white",
-
-        # Ticks
         "xtick.color": "#333333",
         "ytick.color": "#333333",
     })
 
-def plot_sentiment_donut(overall_label: str, overall_conf: float, style_key: str):
-    _apply_style(style_key)
 
+def plot_sentiment_donut(overall_label: str, overall_conf: float):
+    _apply_sleek_style()
     labels = ["Positive", "Neutral", "Negative"]
     vals = [0, 0, 0]
     if overall_label == "POSITIVE":
@@ -159,46 +136,32 @@ def plot_sentiment_donut(overall_label: str, overall_conf: float, style_key: str
         vals = [0, 100 - overall_conf, overall_conf]
     else:
         vals = [0, overall_conf, 100 - overall_conf]
-
     colors = [POS_COLOR, NEU_COLOR, NEG_COLOR]
 
     fig, ax = plt.subplots()
     wedges, _, _ = ax.pie(
-        vals,
-        labels=None,            # labels in legend only
-        autopct="%1.0f%%",
-        startangle=90,
-        pctdistance=0.78,
-        colors=colors
+        vals, labels=None, autopct="%1.0f%%",
+        startangle=90, pctdistance=0.78, colors=colors
     )
-    # Donut hole
     centre = plt.Circle((0, 0), 0.58, fc="white")
     ax.add_artist(centre)
 
-    # Center labels
     ax.text(0, 0.05, overall_label.title(), ha="center", va="center",
             fontsize=12, weight="bold")
     ax.text(0, -0.12, f"{overall_conf:.0f}%", ha="center", va="center",
             fontsize=11, color="#555")
 
-    # Legend
     ax.legend(
         [wedges[0], wedges[1], wedges[2]],
-        labels,
-        loc="center left",
-        bbox_to_anchor=(1.02, 0.5),
-        frameon=False,
+        labels, loc="center left", bbox_to_anchor=(1.02, 0.5),
+        frameon=False
     )
     ax.axis("equal")
     st.pyplot(fig, use_container_width=True)
 
-def plot_aspect_bars(
-    df_aspects: pd.DataFrame,
-    style_key: str,
-    orientation: str = "vertical",
-    show_values: bool = True
-):
-    _apply_style(style_key)
+
+def plot_aspect_bars(df_aspects: pd.DataFrame, orientation: str = "vertical", show_values: bool = True):
+    _apply_sleek_style()
     if df_aspects.empty:
         st.info("No aspects to plot.")
         return
@@ -207,90 +170,70 @@ def plot_aspect_bars(
         y = np.arange(len(df_aspects))
         h = 0.38
         fig, ax = plt.subplots()
-        ax.barh(y - h/2, df_aspects["positive_%"], h, label="Positive",
-                color=POS_COLOR, alpha=0.9)
-        ax.barh(y + h/2, df_aspects["negative_%"], h, label="Negative",
-                color=NEG_COLOR, alpha=0.9)
-
+        ax.barh(y - h/2, df_aspects["positive_%"], h, label="Positive", color=POS_COLOR, alpha=0.9)
+        ax.barh(y + h/2, df_aspects["negative_%"], h, label="Negative", color=NEG_COLOR, alpha=0.9)
         for spine in ["top", "right"]:
             ax.spines[spine].set_visible(False)
-
         ax.set_yticks(y)
         ax.set_yticklabels(df_aspects["aspect"])
         ax.set_xlabel("%")
         ax.set_title("Aspect-level sentiment")
         ax.legend(loc="lower right", frameon=False)
-
         if show_values:
             for i, v in enumerate(df_aspects["positive_%"]):
                 ax.text(v + 1, i - h/2, f"{v:.0f}%", va="center", fontsize=9, color="#333")
             for i, v in enumerate(df_aspects["negative_%"]):
                 ax.text(v + 1, i + h/2, f"{v:.0f}%", va="center", fontsize=9, color="#333")
-
         st.pyplot(fig, use_container_width=True)
 
     else:
         x = np.arange(len(df_aspects))
         w = 0.40
         fig, ax = plt.subplots()
-        p1 = ax.bar(x - w/2, df_aspects["positive_%"], w, label="Positive",
-                    color=POS_COLOR, alpha=0.9)
-        p2 = ax.bar(x + w/2, df_aspects["negative_%"], w, label="Negative",
-                    color=NEG_COLOR, alpha=0.9)
-
+        p1 = ax.bar(x - w/2, df_aspects["positive_%"], w, label="Positive", color=POS_COLOR, alpha=0.9)
+        p2 = ax.bar(x + w/2, df_aspects["negative_%"], w, label="Negative", color=NEG_COLOR, alpha=0.9)
         for spine in ["top", "right"]:
             ax.spines[spine].set_visible(False)
-
         ax.set_xticks(x)
         ax.set_xticklabels(df_aspects["aspect"], rotation=12, ha="right")
         ax.set_ylabel("%")
         ax.set_title("Aspect-level sentiment")
         ax.legend(frameon=False)
-
         if show_values:
             for rects in (p1, p2):
                 for r in rects:
                     ax.text(r.get_x() + r.get_width()/2, r.get_height() + 1,
-                            f"{r.get_height():.0f}%", ha="center", va="bottom",
-                            fontsize=9, color="#333")
-
+                            f"{r.get_height():.0f}%", ha="center", va="bottom", fontsize=9, color="#333")
         st.pyplot(fig, use_container_width=True)
 
-def plot_aspect_radar(df_aspects: pd.DataFrame, style_key: str):
-    _apply_style(style_key)
+
+def plot_aspect_radar(df_aspects: pd.DataFrame):
+    _apply_sleek_style()
     if df_aspects.empty:
         return
 
     labels = df_aspects["aspect"].tolist()
     pos = df_aspects["positive_%"].to_numpy()
     neg = df_aspects["negative_%"].to_numpy()
-
-    # Close the loop
     angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False)
     pos = np.concatenate((pos, [pos[0]]))
     neg = np.concatenate((neg, [neg[0]]))
     angles = np.concatenate((angles, [angles[0]]))
-
     fig, ax = plt.subplots(subplot_kw=dict(polar=True))
-
-    # Light spider grid
     ax.set_facecolor("white")
     ax.grid(True, alpha=0.2)
     ax.set_yticks([20, 40, 60, 80, 100])
     ax.set_yticklabels(["20", "40", "60", "80", "100"], color="#777", fontsize=9)
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
-
-    # Polygons (Positive vs Negative)
     ax.plot(angles, pos, color=POS_COLOR, linewidth=2, label="Positive")
     ax.fill(angles, pos, color=POS_COLOR, alpha=0.15)
-
     ax.plot(angles, neg, color=NEG_COLOR, linewidth=2, label="Negative")
     ax.fill(angles, neg, color=NEG_COLOR, alpha=0.10)
-
     ax.set_title("Aspect radar (Positive vs Negative)", pad=12)
     ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.05), frameon=False)
     st.pyplot(fig, use_container_width=True)
+
 
 def make_download_link(df: pd.DataFrame, filename: str) -> str:
     """Return an HTML link that downloads the dataframe as CSV."""
@@ -300,11 +243,10 @@ def make_download_link(df: pd.DataFrame, filename: str) -> str:
 
 
 # =========================
-# SIDEBAR (controls)
+# SIDEBAR
 # =========================
 st.sidebar.title("⚙️ Settings")
 
-# Load models (cached)
 try:
     sentiment_pipe, zeroshot_pipe = load_pipelines()
     st.sidebar.success("Models loaded.")
@@ -312,27 +254,19 @@ except Exception as e:
     st.sidebar.error(f"Failed to load models: {e}")
     st.stop()
 
-# Graph options
-st.sidebar.markdown("### 🎨 Graph style")
-style_key = st.sidebar.selectbox("Matplotlib style", list(STYLE_MAP.keys()), index=0)
 bar_orientation = st.sidebar.radio("Bar orientation", ["vertical", "horizontal"], index=1)
 show_values = st.sidebar.checkbox("Show % labels on bars", value=True)
 show_radar = st.sidebar.checkbox("Show radar (Positive vs Negative)", value=True)
 
-# Aspects
 st.sidebar.markdown("### 🏷️ Aspects to score")
-custom_aspects = st.sidebar.text_input(
-    "Comma-separated aspects", ", ".join(DEFAULT_ASPECTS)
-)
+custom_aspects = st.sidebar.text_input("Comma-separated aspects", ", ".join(DEFAULT_ASPECTS))
 ASPECTS = [a.strip() for a in custom_aspects.split(",") if a.strip()]
 
-# Batch controls
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🧪 Batch mode")
 example_btn = st.sidebar.button("Load example dataset")
 upload_file = st.sidebar.file_uploader("Or upload CSV with a 'review' column", type=["csv"])
 
-# Extras
 st.sidebar.markdown("---")
 extra_opts = st.sidebar.checkbox("Show extras (keywords, length)", value=True)
 
@@ -340,7 +274,7 @@ extra_opts = st.sidebar.checkbox("Show extras (keywords, length)", value=True)
 # =========================
 # MAIN — Single review
 # =========================
-st.title("🔎 Insightlytics — Customer Feedback Analyzer")
+st.title("🔎 Review Insights — Customer Feedback Analyzer")
 st.caption("Paste a review to get overall sentiment and aspect-level scores (positive vs negative).")
 
 col1, col2 = st.columns([2, 1], gap="large")
@@ -361,28 +295,21 @@ with col2:
 if analyze_btn and review_text.strip():
     with st.spinner("Analyzing review..."):
         out = analyze_single_review(review_text, ASPECTS, sentiment_pipe, zeroshot_pipe)
-
-    # KPIs + Donut
     k1, k2 = st.columns([1, 1])
     with k1:
         st.subheader("🧭 Overall sentiment")
         st.metric("Prediction", out["overall_label"])
         st.metric("Confidence", f"{out['overall_confidence_%']:.0f}%")
     with k2:
-        plot_sentiment_donut(out["overall_label"], out["overall_confidence_%"], style_key)
-
-    # Table + Bars (+ Radar)
+        plot_sentiment_donut(out["overall_label"], out["overall_confidence_%"])
     st.subheader("🧩 Aspect-level signals")
     st.dataframe(out["aspects"], use_container_width=True)
-    plot_aspect_bars(out["aspects"], style_key, bar_orientation, show_values)
+    plot_aspect_bars(out["aspects"], bar_orientation, show_values)
     if show_radar:
-        plot_aspect_radar(out["aspects"], style_key)
-
+        plot_aspect_radar(out["aspects"])
     if extra_opts:
         st.subheader("🔍 Extras")
-        # Word count
         st.write(f"Word count: **{len(review_text.split())}**")
-        # Quick keywords (very simple)
         tokens = [t.strip(".,!?:;()[]\"'\n ").lower() for t in review_text.split()]
         stop = set("""
             a an the and or of to for in on with at from as by is was were are be been it its it's this that these those
@@ -427,7 +354,6 @@ if "batch_df" in st.session_state:
     st.subheader("📚 Batch analysis")
     df = st.session_state["batch_df"].copy()
     st.dataframe(df, use_container_width=True, height=220)
-
     run_batch = st.button("Run batch analysis", type="primary")
     if run_batch:
         rows = []
@@ -435,29 +361,16 @@ if "batch_df" in st.session_state:
             for i, r in df.iterrows():
                 text = str(r["review"]).strip()
                 if not text:
-                    rows.append({
-                        "review_index": i,
-                        "overall_label": "",
-                        "overall_confidence_%": np.nan,
-                        **{f"{a}__positive_%": np.nan for a in ASPECTS},
-                        **{f"{a}__negative_%": np.nan for a in ASPECTS},
-                        **{f"{a}__top_label": "" for a in ASPECTS},
-                    })
                     continue
-
                 out = analyze_single_review(text, ASPECTS, sentiment_pipe, zeroshot_pipe)
-                row = {
-                    "review_index": i,
-                    "overall_label": out["overall_label"],
-                    "overall_confidence_%": out["overall_confidence_%"],
-                }
+                row = {"review_index": i, "overall_label": out["overall_label"],
+                       "overall_confidence_%": out["overall_confidence_%"]}
                 for _, ar in out["aspects"].iterrows():
                     a = ar["aspect"]
                     row[f"{a}__positive_%"] = ar["positive_%"]
                     row[f"{a}__negative_%"] = ar["negative_%"]
                     row[f"{a}__top_label"] = ar["top_label"]
                 rows.append(row)
-
         res = pd.DataFrame(rows)
         st.dataframe(res, use_container_width=True)
         st.markdown(make_download_link(res, "review_insights_results.csv"), unsafe_allow_html=True)
@@ -469,7 +382,7 @@ if "batch_df" in st.session_state:
 st.markdown("""
 ---
 **Notes**
-- Overall sentiment uses `cardiffnlp/twitter-roberta-base-sentiment-latest` (POS/NEU/NEG).
-- Aspects use zero-shot NLI (`facebook/bart-large-mnli`) with labels like *positive delivery speed* vs *negative delivery speed*.
+- Overall sentiment uses `cardiffnlp/twitter-roberta-base-sentiment-latest`.
+- Aspects use zero-shot NLI (`facebook/bart-large-mnli`).
 - Change aspects in the sidebar. Batch mode accepts a CSV with a `review` column.
 """)
