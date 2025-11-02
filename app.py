@@ -186,7 +186,11 @@ def _apply_sleek_style(dark_mode: bool = False):
         })
 
 
-def plot_sentiment_donut(overall_label: str, overall_conf: float):
+def plot_sentiment_donut(overall_label: str, overall_conf: float, dark_mode: bool):
+    POS = POS_DARK if dark_mode else POS_LIGHT
+NEG = NEG_DARK if dark_mode else NEG_LIGHT
+NEU = NEU_DARK if dark_mode else NEU_LIGHT
+_apply_sleek_style(dark_mode)
     _apply_sleek_style()
     labels = ["Positive", "Neutral", "Negative"]
     vals = [0, 0, 0]
@@ -220,7 +224,11 @@ def plot_sentiment_donut(overall_label: str, overall_conf: float):
     st.pyplot(fig, use_container_width=True)
 
 
-def plot_aspect_bars(df_aspects: pd.DataFrame, orientation: str = "vertical", show_values: bool = True):
+def plot_aspect_bars(df_aspects: pd.DataFrame, orientation: str, show_values: bool, dark_mode: bool):
+    POS = POS_DARK if dark_mode else POS_LIGHT
+NEG = NEG_DARK if dark_mode else NEG_LIGHT
+NEU = NEU_DARK if dark_mode else NEU_LIGHT
+_apply_sleek_style(dark_mode)
     _apply_sleek_style()
     if df_aspects.empty:
         st.info("No aspects to plot.")
@@ -267,7 +275,11 @@ def plot_aspect_bars(df_aspects: pd.DataFrame, orientation: str = "vertical", sh
         st.pyplot(fig, use_container_width=True)
 
 
-def plot_aspect_radar(df_aspects: pd.DataFrame):
+def plot_aspect_radar(df_aspects: pd.DataFrame, dark_mode: bool):
+    POS = POS_DARK if dark_mode else POS_LIGHT
+NEG = NEG_DARK if dark_mode else NEG_LIGHT
+NEU = NEU_DARK if dark_mode else NEU_LIGHT
+_apply_sleek_style(dark_mode)
     _apply_sleek_style()
     if df_aspects.empty:
         return
