@@ -143,26 +143,47 @@ def analyze_single_review(
 # =========================
 # VISUAL STYLE + PLOTS
 # =========================
-def _apply_sleek_style():
-    """Apply the sleek modern dashboard look."""
+def _apply_sleek_style(dark_mode: bool = False):
+    """Apply the sleek modern dashboard look (light/dark)."""
     import matplotlib as mpl
-    plt.rcParams.update(plt.rcParamsDefault)  # reset
+    plt.rcParams.update(plt.rcParamsDefault)
 
-    mpl.rcParams.update({
-        "font.size": 11,
-        "axes.titlesize": 13,
-        "axes.labelsize": 11,
-        "legend.fontsize": 10,
-        "axes.grid": True,
-        "grid.color": "#8b8b8b",
-        "grid.alpha": 0.18,
-        "axes.edgecolor": "#DDDDDD",
-        "axes.linewidth": 0.8,
-        "figure.autolayout": True,
-        "figure.facecolor": "white",
-        "xtick.color": "#333333",
-        "ytick.color": "#333333",
-    })
+    if dark_mode:
+        mpl.rcParams.update({
+            "font.size": 11,
+            "axes.titlesize": 13,
+            "axes.labelsize": 11,
+            "legend.fontsize": 10,
+            "axes.grid": True,
+            "grid.color": "#3A3F4B",
+            "grid.alpha": 0.25,
+            "axes.edgecolor": "#3A3F4B",
+            "axes.linewidth": 0.8,
+            "figure.autolayout": True,
+            "figure.facecolor": "#0E1117",
+            "axes.facecolor": "#0E1117",
+            "text.color": "#E6E6E6",
+            "axes.labelcolor": "#E6E6E6",
+            "xtick.color": "#E6E6E6",
+            "ytick.color": "#E6E6E6",
+        })
+    else:
+        mpl.rcParams.update({
+            "font.size": 11,
+            "axes.titlesize": 13,
+            "axes.labelsize": 11,
+            "legend.fontsize": 10,
+            "axes.grid": True,
+            "grid.color": "#8b8b8b",
+            "grid.alpha": 0.18,
+            "axes.edgecolor": "#DDDDDD",
+            "axes.linewidth": 0.8,
+            "figure.autolayout": True,
+            "figure.facecolor": "white",
+            "axes.facecolor": "white",
+            "xtick.color": "#333333",
+            "ytick.color": "#333333",
+        })
 
 
 def plot_sentiment_donut(overall_label: str, overall_conf: float):
