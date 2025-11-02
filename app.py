@@ -16,6 +16,36 @@ from transformers import pipeline
 # CONFIG
 # =========================
 st.set_page_config(page_title="🔎 Review Insights", page_icon="🔎", layout="wide")
+# --- Dashboard Header ---
+st.markdown("""
+    <style>
+        .header {
+            background-color: #F5F7FA;
+            padding: 0.9rem 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            color: #222;
+            margin: 0;
+        }
+        .tagline {
+            color: #666;
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+    </style>
+
+    <div class="header">
+        <h1>🔎 Review Insights</h1>
+        <div class="tagline">AI dashboard for understanding customer feedback</div>
+    </div>
+""", unsafe_allow_html=True)
 
 DEFAULT_ASPECTS = [
     "price", "quality", "delivery speed", "customer service", "packaging", "usability"
