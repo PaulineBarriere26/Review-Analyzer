@@ -43,7 +43,7 @@ st.markdown("""
 
     <div class="header">
         <h1>🔎 Insightlytics</h1>
-        <div class="tagline">AI dashboard for understanding customer feedback</div>
+        <div class="tagline">Your AI dashboard for understanding customer feedback</div>
     </div>
 """, unsafe_allow_html=True)
 
